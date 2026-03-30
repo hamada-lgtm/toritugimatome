@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>取次パートナー コックピット</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Auth Overlay -->
+  <div id="auth-overlay" class="auth-overlay">
+    <div class="auth-box">
+      <h2>ログイン</h2>
+      <input type="text" id="auth-user" class="settings-input" placeholder="ユーザー名" autocomplete="username">
+      <input type="password" id="auth-pass" class="settings-input" placeholder="パスワード" autocomplete="current-password" style="margin-top:8px">
+      <div id="auth-error" style="color:#d93025;font-size:0.8rem;margin-top:4px;display:none">ユーザー名またはパスワードが違います</div>
+      <button class="btn btn-primary" id="auth-login-btn" style="width:100%;margin-top:12px">ログイン</button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header id="app-header">
+    <h1>取次パートナー コックピット</h1>
+    <div class="header-actions">
+      <button class="btn btn-sm" id="settings-btn" style="color:#fff;border-color:rgba(255,255,255,0.4)">設定</button>
+      <button class="btn btn-sm" id="export-btn" style="color:#fff;border-color:rgba(255,255,255,0.4)" disabled>CSV出力</button>
+    </div>
+  </header>
+
+  <div class="main-container">
+
+    <!-- Data Fetch Section -->
+    <section id="fetch-section">
+      <div class="fetch-panel">
+        <div class="fetch-panel-row">
+          <div class="fetch-status" id="fetch-status">
+            <span class="status-badge pending-status">データ未取得</span>
+          </div>
+          <div class="fetch-actions">
+            <button class="btn btn-primary" id="fetch-btn">スプレッドシートからデータ取得</button>
+            <button class="btn btn-sm" id="refresh-btn" disabled>更新</button>
+          </div>
+        </div>
+        <div id="fetch-progress" class="fetch-progress hidden"></div>
+      </div>
+    </section>
+
+    <!-- Import Status -->
+    <div id="import-status"></div>
+
+    <!-- Filter Bar -->
+    <section id="filter-bar" class="hidden">
+      <label>期間:</label>
+      <div class="filter-period-range">
+        <select id="filter-from"></select>
+        <span>〜</span>
+        <select id="filter-to"></select>
+      </div>
+    </section>
+
+    <!-- KPI Cards -->
+    <section id="kpi-cards" class="hidden">
+      <div class="kpi-card">
+        <div class="kpi-label">総紹介数</div>
+        <div class="kpi-value" id="kpi-referrals">-</div>
+      </div>
+      <div class="kpi-card warning">
+        <div class="kpi-label">キャンペーン費用</div>
+        <div class="kpi-value" id="kpi-campaign-cost">-</div>
+      </div>
+      <div class="kpi-card success">
+        <div class="kpi-label">総受注数</div>
+        <div class="kpi-value" id="kpi-orders">-</div>
+      </div>
+      <div class="kpi-card success">
+        <div class="kpi-label">総受注金額</div>
+        <div class="kpi-value" id="kpi-order-amount">-</div>
+      </div>
+      <div class="kpi-card danger">
+        <div class="kpi-label">成約フィー合計</div>
+        <div class="kpi-value" id="kpi-closing-fee">-</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">全体ROI</div>
+        <div class="kpi-value" id="kpi-roi">-</div>
+      </div>
+    </section>
+
+    <!-- Monthly KPI -->
+    <section id="monthly-kpi-section" class="hidden">
+      <div class="monthly-kpi-card">
+        <h3>月別推移（直近4か月）</h3>
+        <div class="table-wrapper">
+          <table id="monthly-kpi-table">
+            <thead id="monthly-kpi-head"></thead>
+            <tbody id="monthly-kpi-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <section id="charts-area" class="hidden">
+      <div class="chart-card">
+        <h3>パートナー別 受注金額</h3>
+        <canvas id="chart-partner-bar-canvas"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>受注率</h3>
+        <canvas id="chart-conversion-canvas"></canvas>
+      </div>
+      <div class="chart-card" style="grid-column: 1 / -1">
+        <h3>パートナー別 ROI</h3>
+        <canvas id="chart-roi-bar-canvas"></canvas>
+      </div>
+    </section>
+
+    <!-- Partner Table -->
+    <section id="partner-table-section" class="hidden">
+      <div class="table-header">
+        <h3>パートナー別実績</h3>
+        <div class="table-filter" id="table-filter">
+          <div class="filter-row">
+            <select id="filter-column-1" class="filter-col-select">
+              <option value="">条件1</option>
+              <option value="referralCount">紹介数</option>
+              <option value="campaignCost">CP費用</option>
+              <option value="orderCount">受注数</option>
+              <option value="orderAmount">受注金額</option>
+              <option value="closingFee">成約フィー</option>
+              <option value="conversionRate">受注率(%)</option>
+              <option value="roi">ROI(%)</option>
+            </select>
+            <input type="number" id="filter-min-1" placeholder="最小" style="width:70px">
+            <span>〜</span>
+            <input type="number" id="filter-max-1" placeholder="最大" style="width:70px">
+          </div>
+          <div class="filter-row">
+            <select id="filter-column-2" class="filter-col-select">
+              <option value="">条件2</option>
+              <option value="referralCount">紹介数</option>
+              <option value="campaignCost">CP費用</option>
+              <option value="orderCount">受注数</option>
+              <option value="orderAmount">受注金額</option>
+              <option value="closingFee">成約フィー</option>
+              <option value="conversionRate">受注率(%)</option>
+              <option value="roi">ROI(%)</option>
+            </select>
+            <input type="number" id="filter-min-2" placeholder="最小" style="width:70px">
+            <span>〜</span>
+            <input type="number" id="filter-max-2" placeholder="最大" style="width:70px">
+          </div>
+          <div class="filter-row">
+            <button class="btn btn-sm btn-primary" id="filter-apply-btn">適用</button>
+            <button class="btn btn-sm" id="filter-reset-btn">リセット</button>
+            <span id="filter-count" style="font-size:0.8rem;color:#666"></span>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table id="partner-table">
+          <thead>
+            <tr>
+              <th data-col="partnerName">パートナー <span class="sort-icon">&#9650;</span></th>
+              <th data-col="referralCount" class="text-right">紹介数 <span class="sort-icon">&#9650;</span></th>
+              <th data-col="campaignCost" class="text-right">CP費用 <span class="sort-icon">&#9650;</span></th>
+              <th data-col="orderCount" class="text-right">受注数 <span class="sort-icon">&#9650;</span></th>
+              <th data-col="orderAmount" class="text-right">受注金額 <span class="sort-icon">&#9650;</span></th>
+              <th data-col="closingFee" class="text-right">成約フィー <span class="sort-icon">&#9650;</span></th>
+              <th data-col="conversionRate" class="text-right">受注率 <span class="sort-icon">&#9650;</span></th>
+              <th data-col="roi" class="text-right">ROI <span class="sort-icon">&#9650;</span></th>
+            </tr>
+          </thead>
+          <tbody id="partner-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="empty-state">
+      <p>「スプレッドシートからデータ取得」ボタンを押してダッシュボードを表示</p>
+      <p style="font-size:0.75rem">初回は「設定」からAPIキーを登録してください</p>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal-content" style="max-width:600px">
+      <div class="modal-header">
+        <h2>設定</h2>
+        <button class="modal-close" id="settings-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-group">
+          <label class="settings-label">Google Sheets APIキー</label>
+          <p class="settings-help">Google Cloud Consoleで取得したAPIキーを入力してください。<br>Sheets APIが有効で、スプレッドシートが「リンクを知っている全員」に共有されている必要があります。</p>
+          <input type="text" id="api-key-input" class="settings-input" placeholder="AIza...">
+        </div>
+        <div class="settings-group">
+          <label class="settings-label">キャンペーン対象リスト スプレッドシートURL</label>
+          <input type="text" id="campaign-sheet-url" class="settings-input" placeholder="https://docs.google.com/spreadsheets/d/...">
+        </div>
+        <div class="settings-group">
+          <label class="settings-label">受注情報 スプレッドシートURL</label>
+          <input type="text" id="orders-sheet-url" class="settings-input" placeholder="https://docs.google.com/spreadsheets/d/...">
+        </div>
+        <div style="text-align:right;margin-top:16px">
+          <button class="btn btn-primary" id="settings-save-btn">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div class="modal-overlay" id="detail-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title"></h2>
+        <button class="modal-close" id="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- CDN Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+  <!-- App Scripts -->
+  <script src="js/auth.js?v=2"></script>
+  <script src="js/dataStore.js?v=2"></script>
+  <script src="js/sheetsApi.js?v=2"></script>
+  <script src="js/matchEngine.js?v=2"></script>
+  <script src="js/kpiCalculator.js?v=2"></script>
+  <script src="js/chartManager.js?v=2"></script>
+  <script src="js/uiRenderer.js?v=2"></script>
+  <script src="js/app.js?v=2"></script>
+</body>
+</html>

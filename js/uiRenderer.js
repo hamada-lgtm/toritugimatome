@@ -100,6 +100,31 @@ const UIRenderer = {
     }
   },
 
+  /** パートナーテーブル用の月セレクタを更新 */
+  renderPartnerMonthSelector(activeSheets) {
+    const select = document.getElementById('partner-month');
+    if (!select) return;
+
+    // activeSheets を古い順にソート
+    const periods = activeSheets.map(n => this._parseSheetPeriod(n))
+      .sort((a, b) => a.sortKey - b.sortKey);
+
+    const prev = select.value;
+
+    let options = '<option value="">全期間</option>';
+    periods.forEach(p => {
+      options += '<option value="' + this._escapeHtml(p.original) + '">' + p.display + '</option>';
+    });
+    select.innerHTML = options;
+
+    // 選択復元（もし現在の選択期間に含まれていれば維持、なければ全期間）
+    if (prev && activeSheets.includes(prev)) {
+      select.value = prev;
+    } else {
+      select.value = '';
+    }
+  },
+
   /** KPIカード描画 */
   renderKPICards(summary) {
     document.getElementById('kpi-cards').classList.remove('hidden');

@@ -3,6 +3,7 @@
 const App = {
   _partnerKPIs: [],
   _tableFilters: [],
+  _selectedPartnerMonth: '',  // 空=全期間、それ以外はシート名
 
   init() {
     // 保存済み設定を読み込み
@@ -13,6 +14,7 @@ const App = {
     this.bindFilterEvents();
     this.bindTableEvents();
     this.bindTableFilterEvents();
+    this.bindPartnerMonthEvent();
     this.bindModalEvents();
     this.bindExportEvents();
     this.bindSettingsEvents();
@@ -250,6 +252,14 @@ const App = {
     });
   },
 
+  // === パートナー月セレクタ ===
+  bindPartnerMonthEvent() {
+    document.getElementById('partner-month').addEventListener('change', (e) => {
+      this._selectedPartnerMonth = e.target.value;
+      this.refresh();
+    });
+  },
+
   // === モーダル ===
   bindModalEvents() {
     document.getElementById('modal-close-btn').addEventListener('click', () => UIRenderer.hideModal());
@@ -315,6 +325,7 @@ const App = {
 
     UIRenderer.renderImportStatus(sheetNames, DataStore.hasOrders());
     UIRenderer.renderFilterBar(sheetNames, DataStore._activeFilters);
+    UIRenderer.renderPartnerMonthSelector(DataStore._activeFilters.sheets);
 
     if (campaignData.length === 0) {
       console.warn('[refresh] campaignDataが空のためダッシュボード非表示');
@@ -323,20 +334,29 @@ const App = {
       return;
     }
 
+    // 全体サマリー・月別推移は期間フィルター全体で算出
     const matched = MatchEngine.matchAll(campaignData, orders);
-
     const partnerNames = [...new Set(
       campaignData.map(r => String(r['取次パートナー'] || '').trim()).filter(n => n)
     )];
-    console.log('[refresh] パートナー名:', partnerNames);
-
-    this._partnerKPIs = partnerNames.map(name =>
+    const summaryPartnerKPIs = partnerNames.map(name =>
       KPICalculator.calcPartnerKPI(name, matched)
     );
-    console.log('[refresh] partnerKPIs:', this._partnerKPIs);
+    const summaryKPI = KPICalculator.calcSummaryKPI(summaryPartnerKPIs);
 
-    const summaryKPI = KPICalculator.calcSummaryKPI(this._partnerKPIs);
-    console.log('[refresh] summaryKPI:', summaryKPI);
+    // パートナーテーブル・チャートは選択月があれば月フィルター適用
+    let partnerData = campaignData;
+    if (this._selectedPartnerMonth) {
+      const sheet = DataStore._campaignSheets.find(s => s.sheetName === this._selectedPartnerMonth);
+      partnerData = sheet ? sheet.data : [];
+    }
+    const partnerMatched = MatchEngine.matchAll(partnerData, orders);
+    const partnerNamesForTable = [...new Set(
+      partnerData.map(r => String(r['取次パートナー'] || '').trim()).filter(n => n)
+    )];
+    this._partnerKPIs = partnerNamesForTable.map(name =>
+      KPICalculator.calcPartnerKPI(name, partnerMatched)
+    );
 
     // 月別推移KPI算出
     const filteredSheets = DataStore._campaignSheets.filter(
@@ -347,7 +367,7 @@ const App = {
     UIRenderer.showDashboard();
     UIRenderer.renderKPICards(summaryKPI);
     UIRenderer.renderMonthlyKPI(monthlyData);
-    UIRenderer.renderPartnerTable(this._partnerKPIs);
+    UIRenderer.renderPartnerTable(this._partnerKPIs, this._tableFilters);
     ChartManager.updateAll(this._partnerKPIs, summaryKPI);
 
     document.getElementById('export-btn').disabled = false;

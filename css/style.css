@@ -296,6 +296,31 @@ body {
   border-bottom: 1px solid var(--color-border-light);
 }
 .table-header h3 { font-size: var(--font-size-base); font-weight: 600; }
+.table-title-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+.partner-month-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.partner-month-selector label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+.partner-month-selector select {
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  background: var(--color-card-bg);
+  cursor: pointer;
+}
+
 .table-filter {
   display: flex;
   flex-direction: column;

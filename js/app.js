@@ -4,6 +4,7 @@ const App = {
   _partnerKPIs: [],
   _tableFilters: [],
   _partnerMonthRange: null,  // null=全期間、{fromIdx, toIdx}で範囲指定
+  _partnerMatrix: null,       // パートナー×月のマトリックス
 
   init() {
     // 保存済み設定を読み込み
@@ -24,6 +25,7 @@ const App = {
     try { this.bindTableEvents(); } catch (e) { console.error('bindTableEvents:', e); }
     try { this.bindTableFilterEvents(); } catch (e) { console.error('bindTableFilterEvents:', e); }
     try { this.bindPartnerMonthEvent(); } catch (e) { console.error('bindPartnerMonthEvent:', e); }
+    try { this.bindMatrixKpiEvent(); } catch (e) { console.error('bindMatrixKpiEvent:', e); }
     try { this.bindModalEvents(); } catch (e) { console.error('bindModalEvents:', e); }
     try { this.bindExportEvents(); } catch (e) { console.error('bindExportEvents:', e); }
     try { this.bindSettingsEvents(); } catch (e) { console.error('bindSettingsEvents:', e); }
@@ -284,6 +286,17 @@ const App = {
     });
   },
 
+  // === マトリックス KPI セレクタ ===
+  bindMatrixKpiEvent() {
+    const select = document.getElementById('matrix-kpi');
+    if (!select) return;
+    select.addEventListener('change', (e) => {
+      if (this._partnerMatrix) {
+        UIRenderer.renderPartnerMonthlyMatrix(this._partnerMatrix, e.target.value);
+      }
+    });
+  },
+
   // === モーダル ===
   bindModalEvents() {
     document.getElementById('modal-close-btn').addEventListener('click', () => UIRenderer.hideModal());
@@ -393,10 +406,24 @@ const App = {
     );
     const monthlyData = KPICalculator.calcMonthlyKPIs(filteredSheets, orders);
 
+    // パートナー×月マトリックス（パートナーテーブルと同じ範囲を使用）
+    let matrixSheets = filteredSheets;
+    if (this._partnerMonthRange && UIRenderer._partnerSortedPeriods) {
+      const { fromIdx, toIdx } = this._partnerMonthRange;
+      const lo = Math.min(fromIdx, toIdx);
+      const hi = Math.max(fromIdx, toIdx);
+      const rangeSheets = UIRenderer._partnerSortedPeriods.slice(lo, hi + 1).map(p => p.original);
+      matrixSheets = filteredSheets.filter(s => rangeSheets.includes(s.sheetName));
+    }
+    this._partnerMatrix = KPICalculator.calcPartnerMonthlyMatrix(matrixSheets, orders);
+    const matrixKpi = document.getElementById('matrix-kpi')
+      ? document.getElementById('matrix-kpi').value : 'orderAmount';
+
     UIRenderer.showDashboard();
     UIRenderer.renderKPICards(summaryKPI);
     UIRenderer.renderMonthlyKPI(monthlyData);
     UIRenderer.renderPartnerTable(this._partnerKPIs, this._tableFilters);
+    UIRenderer.renderPartnerMonthlyMatrix(this._partnerMatrix, matrixKpi);
     ChartManager.updateAll(this._partnerKPIs, summaryKPI);
 
     document.getElementById('export-btn').disabled = false;

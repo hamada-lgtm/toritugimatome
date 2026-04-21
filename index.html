@@ -186,6 +186,33 @@
       </div>
     </section>
 
+    <!-- Partner Monthly Matrix -->
+    <section id="partner-matrix-section" class="hidden">
+      <div class="partner-matrix-card">
+        <div class="matrix-header">
+          <h3>パートナー別 月次推移</h3>
+          <div class="matrix-kpi-selector">
+            <label for="matrix-kpi">指標:</label>
+            <select id="matrix-kpi">
+              <option value="orderAmount">受注金額</option>
+              <option value="referralCount">紹介数</option>
+              <option value="campaignCost">CP費用</option>
+              <option value="orderCount">受注数</option>
+              <option value="closingFee">成約フィー</option>
+              <option value="conversionRate">受注率</option>
+              <option value="roi">ROI</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table id="partner-matrix-table">
+            <thead id="partner-matrix-head"></thead>
+            <tbody id="partner-matrix-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <!-- Empty State -->
     <div id="empty-state" class="empty-state">
       <p>「スプレッドシートからデータ取得」ボタンを押してダッシュボードを表示</p>

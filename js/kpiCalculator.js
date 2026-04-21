@@ -111,6 +111,59 @@ const KPICalculator = {
   },
 
   /**
+   * パートナー別 月次推移マトリックスを算出
+   * @param {Array} campaignSheets - フィルター済みのシート配列
+   * @param {Array} orders - 受注データ
+   * @returns {{ months: Array<{period, display}>, partners: Array<{name, monthly, total}> }}
+   */
+  calcPartnerMonthlyMatrix(campaignSheets, orders) {
+    // 各シートをパース＆ソート（古い順）
+    const parsed = campaignSheets.map(s => ({
+      ...s,
+      period: UIRenderer._parseSheetPeriod(s.sheetName)
+    })).sort((a, b) => a.period.sortKey - b.period.sortKey);
+
+    const months = parsed.map(s => ({
+      period: s.sheetName,
+      display: s.period.display
+    }));
+
+    // 全パートナー名を収集
+    const allPartners = new Set();
+    parsed.forEach(s => {
+      s.data.forEach(r => {
+        const name = String(r['取次パートナー'] || '').trim();
+        if (name) allPartners.add(name);
+      });
+    });
+
+    // 各月のマッチング結果を事前計算
+    const monthlyMatched = parsed.map(s => ({
+      sheetName: s.sheetName,
+      matched: MatchEngine.matchAll(s.data, orders)
+    }));
+
+    // 全期間のマッチング結果
+    const allData = parsed.flatMap(s => s.data);
+    const allMatched = MatchEngine.matchAll(allData, orders);
+
+    // 各パートナーごとに月別KPIと合計を計算
+    const partners = [...allPartners].map(name => {
+      const monthly = {};
+      monthlyMatched.forEach(m => {
+        monthly[m.sheetName] = this.calcPartnerKPI(name, m.matched);
+      });
+      const total = this.calcPartnerKPI(name, allMatched);
+      return { name, monthly, total };
+    });
+
+    // 合計の受注金額で降順ソート
+    partners.sort((a, b) => b.total.orderAmount - a.total.orderAmount);
+
+    return { months, partners };
+  },
+
+  /**
    * 全体サマリーKPIを算出
    */
   calcSummaryKPI(partnerKPIs) {

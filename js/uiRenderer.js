@@ -202,6 +202,56 @@ const UIRenderer = {
     tbody.innerHTML = bodyHtml;
   },
 
+  /** パートナー別 月次推移マトリックス描画 */
+  renderPartnerMonthlyMatrix(matrix, kpiKey) {
+    const section = document.getElementById('partner-matrix-section');
+    const thead = document.getElementById('partner-matrix-head');
+    const tbody = document.getElementById('partner-matrix-body');
+
+    if (!matrix || matrix.months.length === 0 || matrix.partners.length === 0) {
+      section.classList.add('hidden');
+      return;
+    }
+    section.classList.remove('hidden');
+
+    const key = kpiKey || 'orderAmount';
+    const formatters = {
+      referralCount: v => v.toLocaleString() + '件',
+      campaignCost: v => this.formatCurrency(v),
+      orderCount: v => v.toLocaleString() + '件',
+      orderAmount: v => this.formatCurrency(v),
+      closingFee: v => this.formatCurrency(v),
+      conversionRate: v => this.formatPercent(v),
+      roi: v => this.formatROI(v)
+    };
+    const fmt = formatters[key] || (v => String(v));
+    const isRoi = key === 'roi';
+
+    // thead
+    let headHtml = '<tr><th>パートナー</th>';
+    matrix.months.forEach(m => {
+      headHtml += '<th class="text-right">' + m.display + '</th>';
+    });
+    headHtml += '<th class="text-right monthly-total">合計</th></tr>';
+    thead.innerHTML = headHtml;
+
+    // tbody
+    let bodyHtml = '';
+    matrix.partners.forEach(p => {
+      bodyHtml += '<tr><td class="row-label">' + this._escapeHtml(p.name) + '</td>';
+      matrix.months.forEach(m => {
+        const val = p.monthly[m.period] ? p.monthly[m.period][key] : 0;
+        const cls = isRoi ? (val >= 0 ? ' positive' : ' negative') : '';
+        bodyHtml += '<td class="text-right' + cls + '">' + fmt(val) + '</td>';
+      });
+      const totalVal = p.total[key];
+      const totalCls = isRoi ? (totalVal >= 0 ? ' positive' : ' negative') : '';
+      bodyHtml += '<td class="text-right monthly-total' + totalCls + '">' + fmt(totalVal) + '</td>';
+      bodyHtml += '</tr>';
+    });
+    tbody.innerHTML = bodyHtml;
+  },
+
   /** パートナー別テーブル描画 */
   renderPartnerTable(partnerKPIs, filter) {
     const section = document.getElementById('partner-table-section');
@@ -357,6 +407,7 @@ const UIRenderer = {
     document.getElementById('monthly-kpi-section').classList.add('hidden');
     document.getElementById('charts-area').classList.add('hidden');
     document.getElementById('partner-table-section').classList.add('hidden');
+    document.getElementById('partner-matrix-section').classList.add('hidden');
     document.getElementById('filter-bar').classList.add('hidden');
   },
 

@@ -153,6 +153,10 @@ const UIRenderer = {
     }
     section.classList.remove('hidden');
 
+    // タイトルに月数を反映
+    const titleEl = document.getElementById('monthly-kpi-title');
+    if (titleEl) titleEl.textContent = '月別推移（' + monthlyData.months.length + 'か月）';
+
     // thead: 指標 | 月1 | 月2 | ... | 合計
     let headHtml = '<tr><th>指標</th>';
     monthlyData.months.forEach(m => {

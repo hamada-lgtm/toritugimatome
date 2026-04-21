@@ -67,26 +67,20 @@ const KPICalculator = {
   },
 
   /**
-   * 月別KPIを算出（直近N か月）
+   * 月別KPIを算出（期間フィルターで選択された全月）
    * @param {Array} campaignSheets - DataStore._campaignSheets（フィルター済み）
    * @param {Array} orders - 受注データ
-   * @param {number} recentCount - 直近何か月分を返すか（デフォルト4）
    * @returns {{ months: Array<{period, display, summary}>, total: Object }}
    */
-  calcMonthlyKPIs(campaignSheets, orders, recentCount) {
-    recentCount = recentCount || 4;
-
+  calcMonthlyKPIs(campaignSheets, orders) {
     // 各シートをパース＆ソート（古い順）
     const parsed = campaignSheets.map(s => ({
       ...s,
       period: UIRenderer._parseSheetPeriod(s.sheetName)
     })).sort((a, b) => a.period.sortKey - b.period.sortKey);
 
-    // 直近N か月
-    const recent = parsed.slice(-recentCount);
-
     // 各月ごとにKPI算出
-    const months = recent.map(sheet => {
+    const months = parsed.map(sheet => {
       const matched = MatchEngine.matchAll(sheet.data, orders);
       const partnerNames = [...new Set(
         sheet.data.map(r => String(r['取次パートナー'] || '').trim()).filter(n => n)

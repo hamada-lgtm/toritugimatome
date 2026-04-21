@@ -362,7 +362,7 @@ const App = {
     const filteredSheets = DataStore._campaignSheets.filter(
       s => DataStore._activeFilters.sheets.includes(s.sheetName)
     );
-    const monthlyData = KPICalculator.calcMonthlyKPIs(filteredSheets, orders, 4);
+    const monthlyData = KPICalculator.calcMonthlyKPIs(filteredSheets, orders);
 
     UIRenderer.showDashboard();
     UIRenderer.renderKPICards(summaryKPI);

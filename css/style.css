@@ -418,6 +418,20 @@ body {
 }
 .table-wrapper { overflow-x: auto; }
 
+/* パートナー関連テーブルは個別スクロールで高さ制限 */
+#partner-table-section .table-wrapper,
+#partner-matrix-section .table-wrapper {
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+#partner-table-section thead th,
+#partner-matrix-section thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

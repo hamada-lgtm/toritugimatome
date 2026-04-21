@@ -10,22 +10,23 @@ const App = {
     SheetsAPI.loadApiKey();
     SheetsAPI.loadSheetIds();
 
-    this.bindFetchEvents();
-    this.bindFilterEvents();
-    this.bindTableEvents();
-    this.bindTableFilterEvents();
-    this.bindPartnerMonthEvent();
-    this.bindModalEvents();
-    this.bindExportEvents();
-    this.bindSettingsEvents();
-
-    // 認証チェック → 認証成功後にデータ取得
+    // 認証は最優先でバインド（他のバインド処理でエラーが出ても動作するため）
     Auth.init(() => {
       if (SheetsAPI._apiKey) {
         this._updateSettingsInputs();
         this.fetchData();
       }
     });
+
+    // 各種イベントバインド（個別にtry-catchして、1つ失敗しても他は動作する）
+    try { this.bindFetchEvents(); } catch (e) { console.error('bindFetchEvents:', e); }
+    try { this.bindFilterEvents(); } catch (e) { console.error('bindFilterEvents:', e); }
+    try { this.bindTableEvents(); } catch (e) { console.error('bindTableEvents:', e); }
+    try { this.bindTableFilterEvents(); } catch (e) { console.error('bindTableFilterEvents:', e); }
+    try { this.bindPartnerMonthEvent(); } catch (e) { console.error('bindPartnerMonthEvent:', e); }
+    try { this.bindModalEvents(); } catch (e) { console.error('bindModalEvents:', e); }
+    try { this.bindExportEvents(); } catch (e) { console.error('bindExportEvents:', e); }
+    try { this.bindSettingsEvents(); } catch (e) { console.error('bindSettingsEvents:', e); }
   },
 
   // === 設定モーダル ===
@@ -257,6 +258,10 @@ const App = {
     const fromSel = document.getElementById('partner-month-from');
     const toSel = document.getElementById('partner-month-to');
     const resetBtn = document.getElementById('partner-month-reset');
+    if (!fromSel || !toSel || !resetBtn) {
+      console.warn('[bindPartnerMonthEvent] 要素が見つかりません');
+      return;
+    }
 
     const update = () => {
       const fromIdx = parseInt(fromSel.value);
@@ -273,6 +278,8 @@ const App = {
     toSel.addEventListener('change', update);
     resetBtn.addEventListener('click', () => {
       this._partnerMonthRange = null;
+      fromSel.value = '0';
+      toSel.value = String(fromSel.options.length - 1);
       this.refresh();
     });
   },

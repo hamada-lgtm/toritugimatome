@@ -122,10 +122,11 @@
         <div class="table-title-group">
           <h3>パートナー別実績</h3>
           <div class="partner-month-selector">
-            <label for="partner-month">対象期間:</label>
-            <select id="partner-month">
-              <option value="">全期間</option>
-            </select>
+            <label>対象期間:</label>
+            <select id="partner-month-from"></select>
+            <span>〜</span>
+            <select id="partner-month-to"></select>
+            <button class="btn btn-sm" id="partner-month-reset">リセット</button>
           </div>
         </div>
         <div class="table-filter" id="table-filter">

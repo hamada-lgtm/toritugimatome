@@ -100,28 +100,39 @@ const UIRenderer = {
     }
   },
 
-  /** パートナーテーブル用の月セレクタを更新 */
+  /** パートナーテーブル用の月範囲セレクタを更新 */
   renderPartnerMonthSelector(activeSheets) {
-    const select = document.getElementById('partner-month');
-    if (!select) return;
+    const fromSel = document.getElementById('partner-month-from');
+    const toSel = document.getElementById('partner-month-to');
+    if (!fromSel || !toSel) return;
 
     // activeSheets を古い順にソート
     const periods = activeSheets.map(n => this._parseSheetPeriod(n))
       .sort((a, b) => a.sortKey - b.sortKey);
 
-    const prev = select.value;
+    // パートナー範囲選択用に保持
+    this._partnerSortedPeriods = periods;
 
-    let options = '<option value="">全期間</option>';
-    periods.forEach(p => {
-      options += '<option value="' + this._escapeHtml(p.original) + '">' + p.display + '</option>';
+    const prevFrom = fromSel.value;
+    const prevTo = toSel.value;
+
+    let options = '';
+    periods.forEach((p, i) => {
+      options += '<option value="' + i + '">' + p.display + '</option>';
     });
-    select.innerHTML = options;
+    fromSel.innerHTML = options;
+    toSel.innerHTML = options;
 
-    // 選択復元（もし現在の選択期間に含まれていれば維持、なければ全期間）
-    if (prev && activeSheets.includes(prev)) {
-      select.value = prev;
+    // 復元 or デフォルト（全期間）
+    if (prevFrom !== '' && prevFrom < periods.length) {
+      fromSel.value = prevFrom;
     } else {
-      select.value = '';
+      fromSel.value = '0';
+    }
+    if (prevTo !== '' && prevTo < periods.length) {
+      toSel.value = prevTo;
+    } else {
+      toSel.value = String(periods.length - 1);
     }
   },
 

@@ -306,6 +306,7 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
 }
 .partner-month-selector label {
   font-size: var(--font-size-sm);
@@ -319,6 +320,10 @@ body {
   font-size: var(--font-size-sm);
   background: var(--color-card-bg);
   cursor: pointer;
+}
+.partner-month-selector span {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
 }
 
 .table-filter {

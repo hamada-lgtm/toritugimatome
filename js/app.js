@@ -3,7 +3,7 @@
 const App = {
   _partnerKPIs: [],
   _tableFilters: [],
-  _selectedPartnerMonth: '',  // 空=全期間、それ以外はシート名
+  _partnerMonthRange: null,  // null=全期間、{fromIdx, toIdx}で範囲指定
 
   init() {
     // 保存済み設定を読み込み
@@ -252,10 +252,27 @@ const App = {
     });
   },
 
-  // === パートナー月セレクタ ===
+  // === パートナー月範囲セレクタ ===
   bindPartnerMonthEvent() {
-    document.getElementById('partner-month').addEventListener('change', (e) => {
-      this._selectedPartnerMonth = e.target.value;
+    const fromSel = document.getElementById('partner-month-from');
+    const toSel = document.getElementById('partner-month-to');
+    const resetBtn = document.getElementById('partner-month-reset');
+
+    const update = () => {
+      const fromIdx = parseInt(fromSel.value);
+      const toIdx = parseInt(toSel.value);
+      if (isNaN(fromIdx) || isNaN(toIdx)) {
+        this._partnerMonthRange = null;
+      } else {
+        this._partnerMonthRange = { fromIdx, toIdx };
+      }
+      this.refresh();
+    };
+
+    fromSel.addEventListener('change', update);
+    toSel.addEventListener('change', update);
+    resetBtn.addEventListener('click', () => {
+      this._partnerMonthRange = null;
       this.refresh();
     });
   },
@@ -344,11 +361,16 @@ const App = {
     );
     const summaryKPI = KPICalculator.calcSummaryKPI(summaryPartnerKPIs);
 
-    // パートナーテーブル・チャートは選択月があれば月フィルター適用
+    // パートナーテーブル・チャートは範囲指定があれば月フィルター適用
     let partnerData = campaignData;
-    if (this._selectedPartnerMonth) {
-      const sheet = DataStore._campaignSheets.find(s => s.sheetName === this._selectedPartnerMonth);
-      partnerData = sheet ? sheet.data : [];
+    if (this._partnerMonthRange && UIRenderer._partnerSortedPeriods) {
+      const { fromIdx, toIdx } = this._partnerMonthRange;
+      const lo = Math.min(fromIdx, toIdx);
+      const hi = Math.max(fromIdx, toIdx);
+      const rangeSheets = UIRenderer._partnerSortedPeriods.slice(lo, hi + 1).map(p => p.original);
+      partnerData = DataStore._campaignSheets
+        .filter(s => rangeSheets.includes(s.sheetName))
+        .flatMap(s => s.data);
     }
     const partnerMatched = MatchEngine.matchAll(partnerData, orders);
     const partnerNamesForTable = [...new Set(

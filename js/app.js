@@ -5,6 +5,7 @@ const App = {
   _tableFilters: [],
   _partnerMonthRange: null,  // null=全期間、{fromIdx, toIdx}で範囲指定
   _partnerMatrix: null,       // パートナー×月のマトリックス
+  _matrixMonthRange: null,    // マトリックス用の独立した月範囲
 
   init() {
     // 保存済み設定を読み込み
@@ -26,6 +27,8 @@ const App = {
     try { this.bindTableFilterEvents(); } catch (e) { console.error('bindTableFilterEvents:', e); }
     try { this.bindPartnerMonthEvent(); } catch (e) { console.error('bindPartnerMonthEvent:', e); }
     try { this.bindMatrixKpiEvent(); } catch (e) { console.error('bindMatrixKpiEvent:', e); }
+    try { this.bindMatrixMonthEvent(); } catch (e) { console.error('bindMatrixMonthEvent:', e); }
+    try { this.bindMatrixSortEvent(); } catch (e) { console.error('bindMatrixSortEvent:', e); }
     try { this.bindModalEvents(); } catch (e) { console.error('bindModalEvents:', e); }
     try { this.bindExportEvents(); } catch (e) { console.error('bindExportEvents:', e); }
     try { this.bindSettingsEvents(); } catch (e) { console.error('bindSettingsEvents:', e); }
@@ -297,6 +300,49 @@ const App = {
     });
   },
 
+  // === マトリックス月範囲セレクタ ===
+  bindMatrixMonthEvent() {
+    const fromSel = document.getElementById('matrix-month-from');
+    const toSel = document.getElementById('matrix-month-to');
+    const resetBtn = document.getElementById('matrix-month-reset');
+    if (!fromSel || !toSel || !resetBtn) return;
+
+    const update = () => {
+      const fromIdx = parseInt(fromSel.value);
+      const toIdx = parseInt(toSel.value);
+      if (isNaN(fromIdx) || isNaN(toIdx)) {
+        this._matrixMonthRange = null;
+      } else {
+        this._matrixMonthRange = { fromIdx, toIdx };
+      }
+      this.refresh();
+    };
+
+    fromSel.addEventListener('change', update);
+    toSel.addEventListener('change', update);
+    resetBtn.addEventListener('click', () => {
+      this._matrixMonthRange = null;
+      fromSel.value = '0';
+      toSel.value = String(fromSel.options.length - 1);
+      this.refresh();
+    });
+  },
+
+  // === マトリックスヘッダークリックでソート ===
+  bindMatrixSortEvent() {
+    const thead = document.getElementById('partner-matrix-head');
+    if (!thead) return;
+    thead.addEventListener('click', (e) => {
+      const th = e.target.closest('th');
+      if (!th || !th.dataset.matrixCol) return;
+      UIRenderer.handleMatrixSort(th.dataset.matrixCol);
+      if (this._partnerMatrix) {
+        const kpi = document.getElementById('matrix-kpi').value || 'orderAmount';
+        UIRenderer.renderPartnerMonthlyMatrix(this._partnerMatrix, kpi);
+      }
+    });
+  },
+
   // === モーダル ===
   bindModalEvents() {
     document.getElementById('modal-close-btn').addEventListener('click', () => UIRenderer.hideModal());
@@ -406,13 +452,16 @@ const App = {
     );
     const monthlyData = KPICalculator.calcMonthlyKPIs(filteredSheets, orders);
 
-    // パートナー×月マトリックス（パートナーテーブルと同じ範囲を使用）
+    // マトリックス月範囲セレクタを更新
+    UIRenderer.renderMatrixMonthSelector(DataStore._activeFilters.sheets);
+
+    // パートナー×月マトリックス（独立した月範囲を使用）
     let matrixSheets = filteredSheets;
-    if (this._partnerMonthRange && UIRenderer._partnerSortedPeriods) {
-      const { fromIdx, toIdx } = this._partnerMonthRange;
+    if (this._matrixMonthRange && UIRenderer._matrixSortedPeriods) {
+      const { fromIdx, toIdx } = this._matrixMonthRange;
       const lo = Math.min(fromIdx, toIdx);
       const hi = Math.max(fromIdx, toIdx);
-      const rangeSheets = UIRenderer._partnerSortedPeriods.slice(lo, hi + 1).map(p => p.original);
+      const rangeSheets = UIRenderer._matrixSortedPeriods.slice(lo, hi + 1).map(p => p.original);
       matrixSheets = filteredSheets.filter(s => rangeSheets.includes(s.sheetName));
     }
     this._partnerMatrix = KPICalculator.calcPartnerMonthlyMatrix(matrixSheets, orders);

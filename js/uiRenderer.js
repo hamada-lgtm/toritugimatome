@@ -202,6 +202,51 @@ const UIRenderer = {
     tbody.innerHTML = bodyHtml;
   },
 
+  /** マトリックス月範囲セレクタを更新 */
+  renderMatrixMonthSelector(activeSheets) {
+    const fromSel = document.getElementById('matrix-month-from');
+    const toSel = document.getElementById('matrix-month-to');
+    if (!fromSel || !toSel) return;
+
+    const periods = activeSheets.map(n => this._parseSheetPeriod(n))
+      .sort((a, b) => a.sortKey - b.sortKey);
+    this._matrixSortedPeriods = periods;
+
+    const prevFrom = fromSel.value;
+    const prevTo = toSel.value;
+
+    let options = '';
+    periods.forEach((p, i) => {
+      options += '<option value="' + i + '">' + p.display + '</option>';
+    });
+    fromSel.innerHTML = options;
+    toSel.innerHTML = options;
+
+    if (prevFrom !== '' && prevFrom < periods.length) {
+      fromSel.value = prevFrom;
+    } else {
+      fromSel.value = '0';
+    }
+    if (prevTo !== '' && prevTo < periods.length) {
+      toSel.value = prevTo;
+    } else {
+      toSel.value = String(periods.length - 1);
+    }
+  },
+
+  /** マトリックスのソート状態 */
+  _matrixSort: { column: 'total', ascending: false },
+
+  /** マトリックスのソート切替（column: 'total' または シート名） */
+  handleMatrixSort(column) {
+    if (this._matrixSort.column === column) {
+      this._matrixSort.ascending = !this._matrixSort.ascending;
+    } else {
+      this._matrixSort.column = column;
+      this._matrixSort.ascending = false;
+    }
+  },
+
   /** パートナー別 月次推移マトリックス描画 */
   renderPartnerMonthlyMatrix(matrix, kpiKey) {
     const section = document.getElementById('partner-matrix-section');
@@ -227,17 +272,41 @@ const UIRenderer = {
     const fmt = formatters[key] || (v => String(v));
     const isRoi = key === 'roi';
 
-    // thead
-    let headHtml = '<tr><th>パートナー</th>';
-    matrix.months.forEach(m => {
-      headHtml += '<th class="text-right">' + m.display + '</th>';
+    // ソート適用
+    const sortCol = this._matrixSort.column;
+    const asc = this._matrixSort.ascending;
+    const sortedPartners = [...matrix.partners].sort((a, b) => {
+      let va, vb;
+      if (sortCol === 'name') {
+        va = a.name; vb = b.name;
+        return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+      } else if (sortCol === 'total') {
+        va = a.total[key]; vb = b.total[key];
+      } else {
+        // シート名でソート
+        va = a.monthly[sortCol] ? a.monthly[sortCol][key] : 0;
+        vb = b.monthly[sortCol] ? b.monthly[sortCol][key] : 0;
+      }
+      return asc ? va - vb : vb - va;
     });
-    headHtml += '<th class="text-right monthly-total">合計</th></tr>';
+
+    // thead（ソート可能ヘッダー）
+    const sortIcon = (col) => {
+      if (sortCol !== col) return '<span class="sort-icon">&#9650;</span>';
+      return '<span class="sort-icon active">' + (asc ? '&#9650;' : '&#9660;') + '</span>';
+    };
+    let headHtml = '<tr>';
+    headHtml += '<th data-matrix-col="name" class="sortable">パートナー ' + sortIcon('name') + '</th>';
+    matrix.months.forEach(m => {
+      headHtml += '<th data-matrix-col="' + this._escapeHtml(m.period) + '" class="text-right sortable">' + m.display + ' ' + sortIcon(m.period) + '</th>';
+    });
+    headHtml += '<th data-matrix-col="total" class="text-right monthly-total sortable">合計 ' + sortIcon('total') + '</th>';
+    headHtml += '</tr>';
     thead.innerHTML = headHtml;
 
     // tbody
     let bodyHtml = '';
-    matrix.partners.forEach(p => {
+    sortedPartners.forEach(p => {
       bodyHtml += '<tr><td class="row-label">' + this._escapeHtml(p.name) + '</td>';
       matrix.months.forEach(m => {
         const val = p.monthly[m.period] ? p.monthly[m.period][key] : 0;

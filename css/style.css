@@ -204,16 +204,26 @@ body {
   font-size: var(--font-size-base);
   font-weight: 600;
 }
+.matrix-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+.matrix-month-range,
 .matrix-kpi-selector {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
 }
+.matrix-month-range label,
 .matrix-kpi-selector label {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   font-weight: 500;
 }
+.matrix-month-range select,
 .matrix-kpi-selector select {
   padding: 4px 10px;
   border: 1px solid var(--color-border);
@@ -221,6 +231,26 @@ body {
   font-size: var(--font-size-sm);
   background: var(--color-card-bg);
   cursor: pointer;
+}
+.matrix-month-range span {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+#partner-matrix-table thead th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+#partner-matrix-table thead th.sortable:hover {
+  color: var(--color-primary);
+}
+#partner-matrix-table thead th .sort-icon {
+  margin-left: 4px;
+  font-size: var(--font-size-xs);
+  opacity: 0.4;
+}
+#partner-matrix-table thead th .sort-icon.active {
+  opacity: 1;
+  color: var(--color-primary);
 }
 #partner-matrix-table {
   font-size: var(--font-size-sm);
